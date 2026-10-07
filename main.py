@@ -84,3 +84,13 @@ def get_task(task_id: int) -> Any:
             detail="Task not found",
         )
     return task
+
+@app.patch("/tasks/{task_id}", response_model=Task)
+def update_task(task_id: int, task : TaskUpdate) -> Any:
+    updated_task = update_task_record(task_id, task.completed)
+    if updated_task is None:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Task not found",
+        )
+    return updated_task
