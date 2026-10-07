@@ -45,8 +45,10 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 @app.get("/tasks", response_model=list[Task])
-def list_tasks() -> Any:
-    return list_task_records()
+def list_task(completed : bool | None = None) -> Any :
+    return list_task_records(completed)
+# def list_tasks() -> Any:
+#     return list_task_records()
 
 @app.post(
     "/tasks",

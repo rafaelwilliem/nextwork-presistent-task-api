@@ -51,10 +51,22 @@ def create_task_record(title:str) -> dict[str, Any]:
     finally:
         connection.close()
 
-def list_task_records () -> list[dict [str, Any]]:
+def list_task_records (completed: bool | None = None) -> list[dict[str, Any]]:
     connection = get_connection()
     try:
-        rows = connection.execute("SELECT id, title, completed FROM tasks ORDER BY id").fetchall()
+        if completed is None:
+            rows = connection.execute(
+                "SELECT id, title, completed FROM tasks ORDER BY id"
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """
+                SELECT id,title,completed
+                FROM tasks
+                WHERE completed = ?
+                ORDER BY id
+                """, (int(completed),),
+            ).fetchall()
         return [row_to_task(row) for row in rows]
     finally:
         connection.close()
