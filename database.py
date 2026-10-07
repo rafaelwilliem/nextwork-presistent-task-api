@@ -1,3 +1,4 @@
+from typing import final
 import sqlite3
 from typing import Any
 
@@ -12,8 +13,7 @@ def row_to_task(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": row["id"],
         "title": row["title"],
-        "description": row["description"],
-        "is_completed": bool(row["is_completed"])
+        "completed": bool(row["completed"])
     }
 
 def initialize_database() -> None:
@@ -23,6 +23,7 @@ def initialize_database() -> None:
             """
             CREATE TABLE IF NOT EXISTS tasks(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
             completed INTEGER NOT NULL DEFAULT 0
                 CHECK (completed IN (0,1))
             )
@@ -48,4 +49,41 @@ def create_task_record(title:str) -> dict[str, Any]:
             raise RuntimeError("Task was created but could not be loaded")
         return row_to_task(row)
     finally:
-        connection.close
+        connection.close()
+
+def list_task_records () -> list[dict [str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute("SELECT id, title, completed FROM tasks ORDER BY id").fetchall()
+        return [row_to_task(row) for row in rows]
+    finally:
+        connection.close()
+
+def get_task_record(task_id: int) -> dict[str, Any] | None:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            "SELECT id, title, completed FROM tasks WHERE id = ?",
+            (task_id,),
+        ).fetchone()
+        return row_to_task(row) if row is not None else None
+    finally:
+        connection.close()
+
+def update_task_record (task_id:int, completed:bool) -> dict[str, Any] | None :
+    connection = get_connection()
+    try :
+        cursor = connection.execute(
+            "UPDATE tasks SET completed = ? WHERE id = ?",
+            (int(completed), task_id),
+        )
+        connection.commit()
+        if cursor.rowcount == 0:
+            return None
+        row = connection.execute(
+            "SELECT id, title, completed FROM tasks WHERE id = ?",
+            (task_id,),
+        ).fetchone()
+        return row_to_task(row) if row is not None else None
+    finally :
+        connection.close()
